@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bug Beat Blocks</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&family=Mochiy+Pop+One&family=Nunito:wght@600;800&family=Noto+Sans+JP:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-a: #7b3fe4;
+            --bg-b: #ff5da2;
+            --board: #241454;
+            --yellow: #ffd93d;
+            --mint: #4fffb0;
+            --sky: #4dd2ff;
+            --coral: #ff6f61;
+            --pink: #ff9de2;
+            --paper: #fffdf7;
+            --ink: #2a1550;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: var(--ink);
+            font-family: 'Nunito', 'Noto Sans JP', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 480px;
+            background: linear-gradient(160deg, var(--bg-a) 0%, var(--bg-b) 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .screen {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            padding: 20px;
+        }
+        .hidden { display: none !important; }
+
+        .badge {
+            width: 100px;
+            height: auto;
+            margin-bottom: 14px;
+            filter: drop-shadow(0 8px 0 rgba(0,0,0,0.15));
+        }
+
+        h1.title {
+            font-family: 'Fredoka', sans-serif;
+            font-weight: 700;
+            color: #fff;
+            font-size: 34px;
+            line-height: 1.15;
+            text-align: center;
+            letter-spacing: 0.5px;
+            -webkit-text-stroke: 3px var(--ink);
+            paint-order: stroke fill;
+            margin-bottom: 6px;
+        }
+        p.subtitle {
+            font-family: 'Mochiy Pop One', sans-serif;
+            color: #fff;
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 34px;
+            text-align: center;
+            text-shadow: 0 2px 0 rgba(0,0,0,0.15);
+        }
+        h1.section-title {
+            font-family: 'Fredoka', sans-serif;
+            font-weight: 700;
+            color: #fff;
+            -webkit-text-stroke: 2.5px var(--ink);
+            paint-order: stroke fill;
+            font-size: 26px;
+            text-align: center;
+            margin-bottom: 20px;
+            letter-spacing: 0.5px;
+        }
+
+        .btn {
+            font-family: 'Fredoka', sans-serif;
+            font-weight: 700;
+            background: var(--yellow);
+            color: var(--ink);
+            font-size: 17px;
+            letter-spacing: 0.5px;
+            padding: 16px 20px;
+            border: 3px solid var(--ink);
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 6px 0 var(--ink);
+            margin: 8px;
+            width: 82%;
+            max-width: 260px;
+            text-align: center;
+        }
+        .btn:active {
+            transform: translateY(5px);
+            box-shadow: 0 1px 0 var(--ink);
+        }
+        .btn.mint { background: var(--mint); }
+        .btn.sky { background: var(--sky); }
+        .btn.coral { background: var(--coral); color: #fff; }
+        .btn.pink { background: var(--pink); }
+        .btn.secondary {
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+            border: 3px solid rgba(255,255,255,0.6);
+            box-shadow: none;
+        }
+        .btn.secondary:active { transform: translateY(3px); }
+
+        .level-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 26px;
+            width: 100%;
+            max-width: 320px;
+        }
+        .lvl-btn {
+            position: relative;
+            aspect-ratio: 1;
+            background: var(--paper);
+            border: 3px solid var(--ink);
+            border-radius: 16px;
+            color: var(--ink);
+            font-family: 'Fredoka', sans-serif;
+            font-weight: 700;
+            font-size: 18px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 2px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 var(--ink);
+        }
+        .lvl-btn:nth-child(5n+1) { background: var(--yellow); }
+        .lvl-btn:nth-child(5n+2) { background: var(--mint); }
+        .lvl-btn:nth-child(5n+3) { background: var(--sky); }
+        .lvl-btn:nth-child(5n+4) { background: var(--pink); }
+        .lvl-btn:nth-child(5n+5) { background: var(--coral); color: #fff; }
+        .lvl-btn .bug-count {
+            font-family: 'Nunito', sans-serif;
+            font-size: 9px;
+            font-weight: 800;
+        }
+        .lvl-btn.locked {
+            background: rgba(255,255,255,0.18) !important;
+            border-color: rgba(255,255,255,0.4);
+            color: rgba(255,255,255,0.7);
+            box-shadow: none;
+        }
+
+        #overlay-screen { background: rgba(36,20,84,0.92); }
+
+        #pause-screen { background: rgba(36,20,84,0.92); }
+
+        #game-header {
+            position: absolute;
+            top: 10px;
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            align-items: stretch;
+            z-index: 5;
+            padding: 0 10px;
+            gap: 8px;
+        }
+        .stat-box {
+            flex: 1;
+            background: rgba(255,255,255,0.92);
+            border: 2.5px solid var(--ink);
+            border-radius: 12px;
+            text-align: center;
+            padding: 6px 2px;
+        }
+        .stat-label {
+            font-family: 'Nunito', sans-serif;
+            font-size: 9px;
+            font-weight: 800;
+            color: #8b7ab5;
+            letter-spacing: 0.5px;
+        }
+        .stat-val {
+            font-family: 'Fredoka', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--ink);
+            margin-top: 1px;
+        }
+        .stat-val.bugs { color: var(--coral); }
+
+        #pause-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 6;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--paper);
+            border: 2.5px solid var(--ink);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #pause-btn:active { transform: scale(0.92); }
+        #pause-btn.hidden { display: none !important; }
+
+        canvas { display: block; position: relative; z-index: 1; }
+        #next-canvas { margin-top: 2px; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <!-- タイトル画面 -->
+    <div id="title-screen" class="screen">
+        <svg class="badge" viewBox="0 0 100 160">
+            <!-- 積み上がるブロック（実際のゲームの形をそのまま使用） -->
+            <!-- Oピース -->
+            <g transform="rotate(3 50 46)">
+                <rect x="36" y="32" width="13" height="13" rx="3" fill="#ff9de2" stroke="#4a3728" stroke-width="2"/>
+                <rect x="51" y="32" width="13" height="13" rx="3" fill="#ff9de2" stroke="#4a3728" stroke-width="2"/>
+                <rect x="36" y="47" width="13" height="13" rx="3" fill="#ff9de2" stroke="#4a3728" stroke-width="2"/>
+                <rect x="51" y="47" width="13" height="13" rx="3" fill="#ff9de2" stroke="#4a3728" stroke-width="2"/>
+            </g>
+            <!-- Lピース -->
+            <g transform="rotate(-5 50 18)">
+                <rect x="29" y="19" width="13" height="13" rx="3" fill="#4dd2ff" stroke="#4a3728" stroke-width="2"/>
+                <rect x="43" y="19" width="13" height="13" rx="3" fill="#4dd2ff" stroke="#4a3728" stroke-width="2"/>
+                <rect x="57" y="19" width="13" height="13" rx="3" fill="#4dd2ff" stroke="#4a3728" stroke-width="2"/>
+                <rect x="57" y="5" width="13" height="13" rx="3" fill="#4dd2ff" stroke="#4a3728" stroke-width="2"/>
+            </g>
+
+            <!-- おもちバグ（耳と頭がひとつながりの輪郭） -->
+            <path d="M21.2,64.2
+                     Q36.14,93.0 40.1,96.6
+                     Q50,101.1 59.9,96.6
+                     Q63.86,93.0 78.8,64.2
+                     Q87.8,93.0 86,118.2
+                     Q86.7,152.4 69.8,152.4
+                     L30.2,152.4
+                     Q13.3,152.4 14,118.2
+                     Q12.2,93.0 21.2,64.2 Z"
+                  fill="#fbf1e0" stroke="#4a3728" stroke-width="4" stroke-linejoin="round"/>
+            <ellipse cx="36.5" cy="121.8" rx="6.75" ry="13.95" fill="#3a2a1e"/>
+            <ellipse cx="63.5" cy="121.8" rx="6.75" ry="13.95" fill="#3a2a1e"/>
+            <circle cx="35.6" cy="116.2" r="2.16" fill="#fff"/>
+            <circle cx="62.6" cy="116.2" r="2.16" fill="#fff"/>
+        </svg>
+        <h1 class="title">BUG BEAT<br>BLOCKS</h1>
+        <button class="btn" id="start-btn">LEVEL SELECT</button>
+    </div>
+
+    <!-- レベル選択画面 -->
+    <div id="level-screen" class="screen hidden">
+        <h1 class="section-title">SELECT LEVEL</h1>
+        <div class="level-grid" id="level-grid"></div>
+        <button class="btn secondary" id="back-title-btn">TITLEに戻る</button>
+    </div>
+
+    <!-- ゲームオーバー／クリア画面 -->
+    <div id="overlay-screen" class="screen hidden">
+        <h1 class="title" id="overlay-title" style="font-size:28px;">TRY AGAIN?</h1>
+        <p class="subtitle" id="overlay-sub" style="font-family:'Fredoka',sans-serif;font-size:18px;">SCORE 0</p>
+        <button class="btn coral" id="overlay-action-btn">RETRY</button>
+    </div>
+
+    <!-- ポーズ画面 -->
+    <div id="pause-screen" class="screen hidden">
+        <h1 class="title" style="font-size:30px;">PAUSE</h1>
+        <div style="height:16px;"></div>
+        <button class="btn mint" id="resume-btn">つづける</button>
+        <button class="btn sky" id="pause-retry-btn">やり直す</button>
+        <button class="btn secondary" id="pause-title-btn">タイトルに戻る</button>
+    </div>
+
+    <!-- プレイ中ヘッダー -->
+    <div id="game-header" class="hidden">
+        <div class="stat-box"><div class="stat-label">LEVEL</div><div id="ui-level" class="stat-val">1</div></div>
+        <div class="stat-box"><div class="stat-label">BUGS</div><div id="ui-bugs" class="stat-val bugs">1</div></div>
+        <div class="stat-box"><div class="stat-label">SCORE</div><div id="ui-score" class="stat-val">0</div></div>
+        <div class="stat-box"><div class="stat-label">NEXT</div><canvas id="next-canvas" width="42" height="34"></canvas></div>
+    </div>
+    <button id="pause-btn" class="hidden">⏸</button>
+
+    <canvas id="gameCanvas"></canvas>
+</div>
+
+<script>
+/**
+ * Bug Beat Blocks - フル追従操作・NEXT表示・ポーズ対応版（ポップ＆キュート刷新）
+ */
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const nextCanvas = document.getElementById('next-canvas');
+const nextCtx = nextCanvas.getContext('2d');
+
+let COLS = 10;
+let ROWS = 20;
+let BLOCK_SIZE = 24;
+let BOARD_X = 0;
+let BOARD_Y = 0;
+
+// ポップなキャンディーカラー
+const COLORS = [
+    null,
+    '#ffd93d', // I - イエロー
+    '#4dd2ff', // J - スカイブルー
+    '#ff6f61', // L - コーラル
+    '#ff9de2', // O - バブルガムピンク
+    '#4fffb0', // S - ミント
+    '#b388ff', // T - ラベンダー
+    '#ffb347', // Z - オレンジ
+    'BUG'
+];
+
+const SHAPES = [
+    [],
+    [[1,1,1,1]],
+    [[2,0,0],[2,2,2]],
+    [[0,0,3],[3,3,3]],
+    [[4,4],[4,4]],
+    [[0,5,5],[5,5,0]],
+    [[0,6,0],[6,6,6]],
+    [[7,7,0],[0,7,7]]
+];
+
+let audioCtx = null;
+function initAudio() {
+    try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+    } catch(e) {}
+}
+
+let gameState = 'TITLE';
+let stateBeforePause = 'PLAYING';
+let selectedLevel = 1;
+let score = 0;
+let remainingEnemies = 0;
+let board = [];
+let currentPiece = null;
+let nextPiece = null;
+let dropCounter = 0;
+let dropInterval = 1000;
+let lastTime = 0;
+let particles = [];
+let flashAlpha = 0;
+
+class Piece {
+    constructor(type) {
+        this.type = type;
+        this.shape = SHAPES[type];
+        this.x = Math.floor(COLS / 2) - Math.ceil(this.shape[0].length / 2);
+        this.y = 0;
+    }
+}
+
+function resizeCanvas() {
+    const container = document.getElementById('game-container');
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    canvas.width = w;
+    canvas.height = h;
+
+    let availableW = w * 0.95;
+    let availableH = h - 80;
+    BLOCK_SIZE = Math.floor(Math.min(availableW / COLS, availableH / ROWS));
+
+    BOARD_X = (w - (COLS * BLOCK_SIZE)) / 2;
+    BOARD_Y = 70 + (availableH - (ROWS * BLOCK_SIZE)) / 2;
+}
+
+function changeScreen(state) {
+    gameState = state;
+    document.getElementById('title-screen').classList.add('hidden');
+    document.getElementById('level-screen').classList.add('hidden');
+    document.getElementById('overlay-screen').classList.add('hidden');
+    document.getElementById('pause-screen').classList.add('hidden');
+    document.getElementById('game-header').classList.add('hidden');
+    document.getElementById('pause-btn').classList.add('hidden');
+
+    if (state === 'TITLE') {
+        document.getElementById('title-screen').classList.remove('hidden');
+    } else if (state === 'LEVEL_SELECT') {
+        document.getElementById('level-screen').classList.remove('hidden');
+        buildLevelGrid();
+    } else if (state === 'PLAYING') {
+        document.getElementById('game-header').classList.remove('hidden');
+        document.getElementById('pause-btn').classList.remove('hidden');
+        resizeCanvas();
+    } else if (state === 'PAUSED') {
+        document.getElementById('game-header').classList.remove('hidden');
+        document.getElementById('pause-screen').classList.remove('hidden');
+    } else if (state === 'GAMEOVER' || state === 'STAGECLEAR') {
+        document.getElementById('overlay-screen').classList.remove('hidden');
+        document.getElementById('game-header').classList.remove('hidden');
+        document.getElementById('overlay-title').innerText = state === 'GAMEOVER' ? 'TRY AGAIN?' : 'CLEAR!';
+        document.getElementById('overlay-sub').innerText = `SCORE ${score}`;
+        document.getElementById('overlay-action-btn').innerText = state === 'GAMEOVER' ? 'RETRY' : 'NEXT STAGE';
+        document.getElementById('overlay-action-btn').className = state === 'GAMEOVER' ? 'btn coral' : 'btn mint';
+    }
+}
+
+function buildLevelGrid() {
+    const grid = document.getElementById('level-grid');
+    grid.innerHTML = '';
+    for (let i = 1; i <= 20; i++) {
+        const btn = document.createElement('div');
+        btn.className = `lvl-btn ${i > 10 ? 'locked' : ''}`;
+        const bugCount = Math.min(i, 10);
+        btn.innerHTML = i > 10 ? `🔒` : `${i}<span class="bug-count">●×${bugCount}</span>`;
+        if (i <= 10) {
+            btn.onclick = () => {
+                selectedLevel = i;
+                score = 0;
+                setupStage(selectedLevel);
+                changeScreen('PLAYING');
+            };
+        }
+        grid.appendChild(btn);
+    }
+}
+
+document.getElementById('start-btn').onclick = () => {
+    initAudio();
+    changeScreen('LEVEL_SELECT');
+};
+document.getElementById('back-title-btn').onclick = () => changeScreen('TITLE');
+document.getElementById('overlay-action-btn').onclick = () => {
+    if (gameState === 'GAMEOVER') {
+        score = 0;
+        setupStage(selectedLevel);
+        changeScreen('PLAYING');
+    } else if (gameState === 'STAGECLEAR') {
+        selectedLevel = Math.min(selectedLevel + 1, 10);
+        setupStage(selectedLevel);
+        changeScreen('PLAYING');
+    }
+};
+
+// ポーズ操作
+document.getElementById('pause-btn').onclick = () => {
+    if (gameState === 'PLAYING') changeScreen('PAUSED');
+};
+document.getElementById('resume-btn').onclick = () => {
+    if (gameState === 'PAUSED') changeScreen('PLAYING');
+};
+document.getElementById('pause-retry-btn').onclick = () => {
+    score = 0;
+    setupStage(selectedLevel);
+    changeScreen('PLAYING');
+};
+document.getElementById('pause-title-btn').onclick = () => {
+    changeScreen('TITLE');
+};
+
+function setupStage(level) {
+    board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+    const bugCount = Math.min(level, 10);
+    remainingEnemies = bugCount;
+    for (let i = 0; i < bugCount; i++) {
+        let x = (i * 3 + 2) % COLS;
+        let y = 19 - Math.floor(i / 2) * 2;
+        board[y][x] = 8;
+    }
+    dropInterval = Math.max(150, 1000 - (level - 1) * 80);
+    currentPiece = new Piece(Math.floor(Math.random() * 7) + 1);
+    nextPiece = new Piece(Math.floor(Math.random() * 7) + 1);
+    particles = [];
+}
+
+function updateUI() {
+    document.getElementById('ui-level').innerText = selectedLevel;
+    document.getElementById('ui-bugs').innerText = remainingEnemies;
+    document.getElementById('ui-score').innerText = score;
+    drawNextPiece();
+}
+
+function drawNextPiece() {
+    nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
+    if (!nextPiece) return;
+    let size = 7;
+    let shape = nextPiece.shape;
+    let w = shape[0].length * size;
+    let h = shape.length * size;
+    let startX = (nextCanvas.width - w) / 2;
+    let startY = (nextCanvas.height - h) / 2;
+
+    shape.forEach((row, r) => {
+        row.forEach((val, c) => {
+            if (val) {
+                nextCtx.fillStyle = COLORS[val];
+                nextCtx.fillRect(startX + c * size, startY + r * size, size - 1, size - 1);
+            }
+        });
+    });
+}
+
+function update(time = 0) {
+    let dt = time - lastTime;
+    lastTime = time;
+
+    if (gameState === 'PLAYING') {
+        dropCounter += dt;
+        if (dropCounter > dropInterval) {
+            currentPiece.y++;
+            if (checkCollisionAt(currentPiece.x, currentPiece.y, currentPiece.shape)) {
+                currentPiece.y--;
+                mergePiece();
+                checkLines();
+                currentPiece = nextPiece;
+                nextPiece = new Piece(Math.floor(Math.random() * 7) + 1);
+                if (checkCollisionAt(currentPiece.x, currentPiece.y, currentPiece.shape)) {
+                    changeScreen('GAMEOVER');
+                }
+            }
+            dropCounter = 0;
+        }
+        updateUI();
+        updateParticles(dt);
+    }
+    drawGame();
+    requestAnimationFrame(update);
+}
+
+function checkCollisionAt(px, py, shape) {
+    for (let r = 0; r < shape.length; r++) {
+        for (let c = 0; c < shape[r].length; c++) {
+            if (shape[r][c]) {
+                let nx = px + c;
+                let ny = py + r;
+                if (nx < 0 || nx >= COLS || ny >= ROWS) return true;
+                if (ny >= 0 && board[ny][nx]) return true;
+            }
+        }
+    }
+    return false;
+}
+
+function mergePiece() {
+    currentPiece.shape.forEach((row, r) => {
+        row.forEach((val, c) => {
+            if (val) board[currentPiece.y + r][currentPiece.x + c] = val;
+        });
+    });
+}
+
+function spawnSquash(cx, cy) {
+    for (let i = 0; i < 10; i++) {
+        particles.push({
+            x: cx, y: cy,
+            vx: (Math.random() - 0.5) * 3.4,
+            vy: (Math.random() - 0.9) * 3.4,
+            life: 500 + Math.random() * 200,
+            age: 0,
+            color: [ '#ffd93d', '#ff9de2', '#4fffb0', '#4dd2ff' ][i % 4]
+        });
+    }
+}
+
+function updateParticles(dt) {
+    if (flashAlpha > 0) flashAlpha = Math.max(0, flashAlpha - dt / 220);
+    particles.forEach(p => {
+        p.age += dt;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.12;
+    });
+    particles = particles.filter(p => p.age < p.life);
+}
+
+function checkLines() {
+    let killed = 0;
+    for (let r = ROWS - 1; r >= 0; r--) {
+        if (board[r].every(cell => cell !== 0)) {
+            board[r].forEach((cell, c) => {
+                if (cell === 8) {
+                    killed++;
+                    spawnSquash(BOARD_X + c * BLOCK_SIZE + BLOCK_SIZE / 2, BOARD_Y + r * BLOCK_SIZE + BLOCK_SIZE / 2);
+                }
+            });
+            board.splice(r, 1);
+            board.unshift(Array(COLS).fill(0));
+            r++;
+        }
+    }
+    if (killed > 0) {
+        remainingEnemies -= killed;
+        score += killed * 500;
+        flashAlpha = 0.5;
+        if (remainingEnemies <= 0) changeScreen('STAGECLEAR');
+    }
+}
+
+function getGhostY() {
+    if (!currentPiece) return 0;
+    let gy = currentPiece.y;
+    while (!checkCollisionAt(currentPiece.x, gy + 1, currentPiece.shape)) {
+        gy++;
+    }
+    return gy;
+}
+
+function drawGame() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (gameState !== 'PLAYING' && gameState !== 'PAUSED' && gameState !== 'GAMEOVER' && gameState !== 'STAGECLEAR') return;
+
+    // ボード背景
+    ctx.fillStyle = '#1a0f3d';
+    ctx.fillRect(BOARD_X, BOARD_Y, COLS * BLOCK_SIZE, ROWS * BLOCK_SIZE);
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    for (let c = 1; c < COLS; c++) {
+        ctx.beginPath();
+        ctx.moveTo(BOARD_X + c * BLOCK_SIZE, BOARD_Y);
+        ctx.lineTo(BOARD_X + c * BLOCK_SIZE, BOARD_Y + ROWS * BLOCK_SIZE);
+        ctx.stroke();
+    }
+
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            if (board[r][c]) drawCell(c, r, board[r][c]);
+        }
+    }
+
+    if (currentPiece && gameState === 'PLAYING') {
+        let ghostY = getGhostY();
+        currentPiece.shape.forEach((row, r) => {
+            row.forEach((val, c) => {
+                if (val) drawGhostCell(currentPiece.x + c, ghostY + r);
+            });
+        });
+        currentPiece.shape.forEach((row, r) => {
+            row.forEach((val, c) => {
+                if (val) drawCell(currentPiece.x + c, currentPiece.y + r, val);
+            });
+        });
+    }
+
+    // パーティクル（駆除エフェクト）
+    particles.forEach(p => {
+        let t = 1 - p.age / p.life;
+        ctx.globalAlpha = Math.max(0, t);
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+        ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+
+    if (flashAlpha > 0) {
+        ctx.fillStyle = `rgba(255,217,61,${flashAlpha * 0.22})`;
+        ctx.fillRect(BOARD_X, BOARD_Y, COLS * BLOCK_SIZE, ROWS * BLOCK_SIZE);
+    }
+
+    if (gameState === 'PAUSED') {
+        ctx.fillStyle = 'rgba(20,10,45,0.55)';
+        ctx.fillRect(BOARD_X, BOARD_Y, COLS * BLOCK_SIZE, ROWS * BLOCK_SIZE);
+    }
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(BOARD_X, BOARD_Y, COLS * BLOCK_SIZE, ROWS * BLOCK_SIZE);
+}
+
+function drawCell(c, r, type) {
+    let px = BOARD_X + c * BLOCK_SIZE;
+    let py = BOARD_Y + r * BLOCK_SIZE;
+
+    if (type === 8) {
+        drawBug(px, py);
+    } else {
+        let base = COLORS[type];
+        let radius = Math.max(3, BLOCK_SIZE * 0.18);
+        roundRect(px + 1.5, py + 1.5, BLOCK_SIZE - 3, BLOCK_SIZE - 3, radius);
+        ctx.fillStyle = base;
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.35)';
+        roundRect(px + 3, py + 3, BLOCK_SIZE - 6, Math.max(2, BLOCK_SIZE * 0.32), radius * 0.7);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+        ctx.lineWidth = 1.5;
+        roundRect(px + 1.5, py + 1.5, BLOCK_SIZE - 3, BLOCK_SIZE - 3, radius);
+        ctx.stroke();
+    }
+}
+
+function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+}
+
+// もっともシンプルなバグ（クリーム色・耳と頭がひとつながりの輪郭、しずく型の目、口なし）
+// タイトル画面のバッジと同じ見た目に統一している。
+// 今後「色つきバグ」「羽つきバグ」などのバリエーションを追加する場合は
+// この関数に variant 引数を足して分岐させる想定（例: drawBug(px, py, variant)）
+function drawBug(px, py) {
+    let s = BLOCK_SIZE;
+    let cx = px + s / 2;
+    let cy = py + s / 2;
+
+    const bw = s * 0.40;
+    const topY = cy - s * 0.28;
+    const bottomY = cy + s * 0.36;
+    const earTipY = cy - s * 0.62;
+    const earTipX = s * 0.32;
+    const innerX = s * 0.11;
+    const d = s * 0.02;
+
+    ctx.fillStyle = '#fbf1e0';
+    ctx.strokeStyle = '#4a3728';
+    ctx.lineWidth = Math.max(1.5, s * 0.065);
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+
+    ctx.beginPath();
+    ctx.moveTo(cx - earTipX, earTipY);
+    ctx.quadraticCurveTo(cx - innerX * 1.4, topY - d, cx - innerX, topY + d);
+    ctx.quadraticCurveTo(cx, topY + d * 3.5, cx + innerX, topY + d);
+    ctx.quadraticCurveTo(cx + innerX * 1.4, topY - d, cx + earTipX, earTipY);
+    ctx.quadraticCurveTo(cx + bw * 1.05, topY - d, cx + bw, cy - d);
+    ctx.quadraticCurveTo(cx + bw * 1.02, bottomY, cx + bw * 0.55, bottomY);
+    ctx.lineTo(cx - bw * 0.55, bottomY);
+    ctx.quadraticCurveTo(cx - bw * 1.02, bottomY, cx - bw, cy - d);
+    ctx.quadraticCurveTo(cx - bw * 1.05, topY - d, cx - earTipX, earTipY);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // 目（しずく型 + 小さいハイライト、口はなし）
+    ctx.fillStyle = '#3a2a1e';
+    let eyeW = s * 0.075, eyeH = s * 0.155;
+    let eyeY = cy + s * 0.02;
+    let eyeX = s * 0.15;
+    ctx.beginPath();
+    ctx.ellipse(cx - eyeX, eyeY, eyeW, eyeH, 0, 0, Math.PI * 2);
+    ctx.ellipse(cx + eyeX, eyeY, eyeW, eyeH, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#ffffff';
+    let hl = eyeW * 0.32;
+    ctx.beginPath();
+    ctx.arc(cx - eyeX - hl * 0.4, eyeY - eyeH * 0.4, hl, 0, Math.PI * 2);
+    ctx.arc(cx + eyeX - hl * 0.4, eyeY - eyeH * 0.4, hl, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+function drawGhostCell(c, r) {
+    let px = BOARD_X + c * BLOCK_SIZE;
+    let py = BOARD_Y + r * BLOCK_SIZE;
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.setLineDash([3, 3]);
+    ctx.lineWidth = 1.5;
+    roundRect(px + 2, py + 2, BLOCK_SIZE - 4, BLOCK_SIZE - 4, Math.max(3, BLOCK_SIZE * 0.18));
+    ctx.stroke();
+    ctx.setLineDash([]);
+}
+
+// 指の動きに完全追従する操作（左右・上下どちらも追従）
+let tX = 0, tY = 0, tTime = 0;
+let initialPieceX = 0;
+let initialPieceY = 0;
+let isDragging = false;
+
+canvas.addEventListener('pointerdown', e => {
+    if (gameState !== 'PLAYING') return;
+    tX = e.clientX;
+    tY = e.clientY;
+    tTime = Date.now();
+    initialPieceX = currentPiece.x;
+    initialPieceY = currentPiece.y;
+    isDragging = true;
+});
+
+canvas.addEventListener('pointermove', e => {
+    if (!isDragging || gameState !== 'PLAYING') return;
+
+    let dx = e.clientX - tX;
+    let dy = e.clientY - tY;
+
+    let gridDeltaX = Math.round(dx / BLOCK_SIZE);
+    let targetX = initialPieceX + gridDeltaX;
+    if (currentPiece.x !== targetX) {
+        let oldX = currentPiece.x;
+        currentPiece.x = targetX;
+        if (checkCollisionAt(currentPiece.x, currentPiece.y, currentPiece.shape)) {
+            currentPiece.x = oldX;
+        }
+    }
+
+    let gridDeltaY = Math.round(dy / BLOCK_SIZE);
+    let targetY = initialPieceY + Math.max(0, gridDeltaY);
+    if (currentPiece.y !== targetY) {
+        let oldY = currentPiece.y;
+        currentPiece.y = targetY;
+        if (checkCollisionAt(currentPiece.x, currentPiece.y, currentPiece.shape)) {
+            currentPiece.y = oldY;
+        }
+    }
+});
+
+canvas.addEventListener('pointerup', e => {
+    if (!isDragging || gameState !== 'PLAYING') return;
+    isDragging = false;
+
+    let dx = e.clientX - tX;
+    let dy = e.clientY - tY;
+    let dt = Date.now() - tTime;
+
+    if (Math.abs(dx) < 15 && Math.abs(dy) < 15 && dt < 250) {
+        let oldShape = currentPiece.shape;
+        let rotated = oldShape[0].map((_, i) => oldShape.map(row => row[i]).reverse());
+        let oldX = currentPiece.x;
+
+        currentPiece.shape = rotated;
+        if (checkCollisionAt(currentPiece.x, currentPiece.y, currentPiece.shape)) {
+            currentPiece.x -= 1;
+            if (checkCollisionAt(currentPiece.x, currentPiece.y, currentPiece.shape)) {
+                currentPiece.x += 2;
+                if (checkCollisionAt(currentPiece.x, currentPiece.y, currentPiece.shape)) {
+                    currentPiece.x = oldX;
+                    currentPiece.shape = oldShape;
+                }
+            }
+        }
+    }
+});
+
+window.addEventListener('resize', resizeCanvas);
+changeScreen('TITLE');
+requestAnimationFrame(update);
+</script>
+</body>
+</html>
