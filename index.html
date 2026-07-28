@@ -47,8 +47,9 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             overflow: hidden;
+            padding: 10px;
         }
 
         .screen {
@@ -208,34 +209,28 @@
             justify-content: center;
         }
 
+        /* 1. 見やすくゆったり広げた上部ヘッダー */
         #game-header {
-            position: absolute;
-            top: 8px;
-            left: 8px;
-            right: 8px;
+            width: 100%;
             display: flex;
             justify-content: space-between;
             align-items: center;
             z-index: 5;
-            gap: 5px;
+            gap: 8px;
+            margin-bottom: 8px;
         }
         .stat-box {
+            flex: 1;
             background: rgba(255,255,255,0.92);
-            border: 2px solid var(--ink);
-            border-radius: 10px;
+            border: 2.5px solid var(--ink);
+            border-radius: 14px;
             text-align: center;
-            padding: 4px 6px;
-            min-width: 50px;
-        }
-        .stat-box.preview-box {
-            padding: 3px 6px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            padding: 6px 4px;
+            box-shadow: 0 3px 0 var(--ink);
         }
         .stat-label {
             font-family: 'Nunito', sans-serif;
-            font-size: 8px;
+            font-size: 10px;
             font-weight: 800;
             color: #8b7ab5;
             letter-spacing: 0.5px;
@@ -243,33 +238,97 @@
         }
         .stat-val {
             font-family: 'Fredoka', sans-serif;
-            font-size: 16px;
+            font-size: 20px;
             font-weight: 700;
             color: var(--ink);
             line-height: 1.1;
+            margin-top: 2px;
         }
         .stat-val.bugs { color: var(--coral); }
 
         #pause-btn {
-            width: 36px;
-            height: 36px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             background: var(--paper);
-            border: 2px solid var(--ink);
+            border: 2.5px solid var(--ink);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 14px;
+            font-size: 18px;
             cursor: pointer;
-            box-shadow: 0 2px 0 var(--ink);
+            box-shadow: 0 3px 0 var(--ink);
             flex-shrink: 0;
         }
-        #pause-btn:active { transform: scale(0.92); }
+        #pause-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
 
-        #drop-button {
-            position: absolute;
-            z-index: 6;
-            background: var(--yellow);
+        /* 2. メインプレイエリア（盤面＋右サイドバー） */
+        #play-area {
+            width: 100%;
+            flex: 1;
+            display: flex;
+            align-items: stretch;
+            justify-content: space-between;
+            gap: 10px;
+            position: relative;
+        }
+
+        canvas#gameCanvas {
+            display: block;
+            border-radius: 4px;
+        }
+
+        /* 3. 右側サイドパネル（PREVIEW ＆ 右下操作ボタン） */
+        #side-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 5;
+        }
+
+        /* 拡大したNEXT & AFTER プレビューカード */
+        .preview-card {
+            width: 100%;
+            background: rgba(255,255,255,0.92);
+            border: 2.5px solid var(--ink);
+            border-radius: 16px;
+            padding: 8px 4px;
+            text-align: center;
+            box-shadow: 0 4px 0 var(--ink);
+            margin-bottom: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .preview-card .stat-label {
+            font-size: 11px;
+            margin-bottom: 4px;
+        }
+
+        .next-preview-canvas {
+            display: block;
+        }
+
+        /* 右下の操作ボタンパネル */
+        #controls-panel {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ctrl-row {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .ctrl-btn {
+            background: var(--paper);
             color: var(--ink);
             border: 2.5px solid var(--ink);
             border-radius: 16px;
@@ -281,18 +340,25 @@
             justify-content: center;
             box-shadow: 0 4px 0 var(--ink);
             cursor: pointer;
-            text-align: center;
+            font-size: 20px;
+            line-height: 1;
+            padding: 10px;
+            flex: 1;
         }
-        #drop-button:active, #drop-button.active {
+        .ctrl-btn:active, .ctrl-btn.active {
             transform: translateY(2px);
             box-shadow: 0 1px 0 var(--ink);
-            background: #ffe600;
+            background: #e6e0d8;
         }
-        #drop-button .icon { font-size: 20px; line-height: 1; }
-        #drop-button .text { font-size: 9px; line-height: 1.1; margin-top: 2px; }
 
-        canvas { display: block; position: relative; z-index: 1; }
-        .next-preview-canvas { display: block; margin-top: 2px; }
+        .ctrl-btn.rotate { background: var(--sky); }
+        .ctrl-btn.fast {
+            background: var(--yellow);
+            padding: 12px 6px;
+            width: 100%;
+        }
+        .ctrl-btn.fast:active, .ctrl-btn.fast.active { background: #ffe600; }
+        .ctrl-btn.fast .text { font-size: 10px; margin-top: 2px; }
     </style>
 </head>
 <body>
@@ -351,27 +417,50 @@
         </div>
     </div>
 
-    <!-- プレイ中ヘッダー -->
+    <!-- 1. 広く見やすくなった上部ヘッダー -->
     <div id="game-header" class="hidden">
         <div class="stat-box"><div class="stat-label">LEVEL</div><div id="ui-level" class="stat-val">1</div></div>
         <div class="stat-box"><div class="stat-label">BUGS</div><div id="ui-bugs" class="stat-val bugs">1</div></div>
         <div class="stat-box"><div class="stat-label">SCORE</div><div id="ui-score" class="stat-val">0</div></div>
-        <div class="stat-box preview-box"><div class="stat-label">NEXT</div><canvas id="next-canvas" class="next-preview-canvas" width="30" height="26"></canvas></div>
-        <div class="stat-box preview-box"><div class="stat-label">AFTER</div><canvas id="after-canvas" class="next-preview-canvas" width="30" height="26"></canvas></div>
         <button id="pause-btn">⏸</button>
     </div>
-    
-    <div id="drop-button" class="hidden">
-        <div class="icon">⏬</div>
-        <div class="text">FAST</div>
-    </div>
 
-    <canvas id="gameCanvas"></canvas>
+    <!-- 2. メインエリア（盤面Canvas + 右サイドパネル） -->
+    <div id="play-area">
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="side-panel" class="hidden">
+            <!-- 右上：大きく表示されるNEXT / AFTER -->
+            <div>
+                <div class="preview-card">
+                    <div class="stat-label">NEXT</div>
+                    <canvas id="next-canvas" class="next-preview-canvas" width="60" height="50"></canvas>
+                </div>
+                <div class="preview-card">
+                    <div class="stat-label">AFTER</div>
+                    <canvas id="after-canvas" class="next-preview-canvas" width="60" height="50"></canvas>
+                </div>
+            </div>
+
+            <!-- 右下：操作用ボタン群（回転、左右移動、早落下） -->
+            <div id="controls-panel">
+                <button class="ctrl-btn rotate" id="btn-rotate">🔄</button>
+                <div class="ctrl-row">
+                    <button class="ctrl-btn" id="btn-left">◀</button>
+                    <button class="ctrl-btn" id="btn-right">▶</button>
+                </div>
+                <button class="ctrl-btn fast" id="btn-fast">
+                    <span style="font-size:18px;">⏬</span>
+                    <span class="text">FAST</span>
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
 /**
- * Bug Beat Blocks - 1マス単位ステップ物理シミュレーション対応完全版
+ * Bug Beat Blocks - レイアウト最適化・右下操作パネル追加版
  */
 
 const canvas = document.getElementById('gameCanvas');
@@ -384,8 +473,6 @@ const afterCtx = afterCanvas.getContext('2d');
 let COLS = 10;
 let ROWS = 20;
 let BLOCK_SIZE = 24;
-let BOARD_X = 0;
-let BOARD_Y = 0;
 
 const BLOCK_COLORS = [1, 2, 3, 4];
 
@@ -470,32 +557,23 @@ class Piece {
 }
 
 function resizeCanvas() {
-    const container = document.getElementById('game-container');
-    const w = container.clientWidth;
-    const h = container.clientHeight;
-    canvas.width = w;
-    canvas.height = h;
+    const playArea = document.getElementById('play-area');
+    const containerW = playArea.clientWidth;
+    const containerH = playArea.clientHeight;
 
-    let headerH = 65;
-    let availableH = h - headerH - 15;
-    let rightAreaW = 55;
-    let availableW = w - rightAreaW - 20;
+    // 右側のサイドパネル幅（100px〜120px程度確保）
+    let sidePanelW = Math.min(115, Math.max(90, containerW * 0.28));
+    let availableBoardW = containerW - sidePanelW - 10;
 
-    BLOCK_SIZE = Math.floor(Math.min(availableW / COLS, availableH / ROWS));
+    // 盤面サイズ計算
+    BLOCK_SIZE = Math.floor(Math.min(availableBoardW / COLS, containerH / ROWS));
 
-    BOARD_X = 12;
-    BOARD_Y = headerH + (availableH - (ROWS * BLOCK_SIZE)) / 2;
+    canvas.width = COLS * BLOCK_SIZE;
+    canvas.height = ROWS * BLOCK_SIZE;
 
-    const dropBtn = document.getElementById('drop-button');
-    let btnX = BOARD_X + COLS * BLOCK_SIZE + 8;
-    let btnY = BOARD_Y + (ROWS * BLOCK_SIZE) - 95;
-    let btnW = Math.min(50, w - btnX - 8);
-    let btnH = 85;
-
-    dropBtn.style.left = `${btnX}px`;
-    dropBtn.style.top = `${btnY}px`;
-    dropBtn.style.width = `${Math.max(42, btnW)}px`;
-    dropBtn.style.height = `${btnH}px`;
+    // サイドパネルの幅を同期調整
+    const sidePanel = document.getElementById('side-panel');
+    sidePanel.style.width = `${sidePanelW}px`;
 }
 
 function changeScreen(state) {
@@ -506,7 +584,7 @@ function changeScreen(state) {
     document.getElementById('pause-screen').classList.add('hidden');
     document.getElementById('log-screen').classList.add('hidden');
     document.getElementById('game-header').classList.add('hidden');
-    document.getElementById('drop-button').classList.add('hidden');
+    document.getElementById('side-panel').classList.add('hidden');
 
     if (state === 'TITLE') {
         document.getElementById('title-screen').classList.remove('hidden');
@@ -515,7 +593,7 @@ function changeScreen(state) {
         buildLevelGrid();
     } else if (state === 'PLAYING') {
         document.getElementById('game-header').classList.remove('hidden');
-        document.getElementById('drop-button').classList.remove('hidden');
+        document.getElementById('side-panel').classList.remove('hidden');
         resizeCanvas();
     } else if (state === 'PAUSED') {
         document.getElementById('game-header').classList.remove('hidden');
@@ -612,21 +690,53 @@ document.getElementById('copy-log-btn').onclick = () => {
     document.body.removeChild(textArea);
 };
 
-const dropBtn = document.getElementById('drop-button');
+// 右下：操作ボタンのイベント設定
+function rotatePiece() {
+    if (gameState !== 'PLAYING' || isAnimating || !currentPiece) return;
+    let oldShape = currentPiece.shape;
+    let rotated = oldShape[0].map((_, i) => oldShape.map(row => row[i]).reverse());
+    let oldX = currentPiece.x;
+
+    currentPiece.shape = rotated;
+    if (checkCollisionAt(currentPiece.x, currentPiece.y, currentPiece.shape)) {
+        currentPiece.x -= 1;
+        if (checkCollisionAt(currentPiece.x, currentPiece.y, currentPiece.shape)) {
+            currentPiece.x += 2;
+            if (checkCollisionAt(currentPiece.x, currentPiece.y, currentPiece.shape)) {
+                currentPiece.x = oldX;
+                currentPiece.shape = oldShape;
+            }
+        }
+    }
+}
+
+function movePiece(dir) {
+    if (gameState !== 'PLAYING' || isAnimating || !currentPiece) return;
+    let nextX = currentPiece.x + dir;
+    if (!checkCollisionAt(nextX, currentPiece.y, currentPiece.shape)) {
+        currentPiece.x = nextX;
+    }
+}
+
+document.getElementById('btn-rotate').onclick = (e) => { e.preventDefault(); rotatePiece(); };
+document.getElementById('btn-left').onclick = (e) => { e.preventDefault(); movePiece(-1); };
+document.getElementById('btn-right').onclick = (e) => { e.preventDefault(); movePiece(1); };
+
+const fastBtn = document.getElementById('btn-fast');
 const startFastDrop = (e) => {
     e.preventDefault();
     isFastDropping = true;
-    dropBtn.classList.add('active');
+    fastBtn.classList.add('active');
 };
 const stopFastDrop = (e) => {
     e.preventDefault();
     isFastDropping = false;
-    dropBtn.classList.remove('active');
+    fastBtn.classList.remove('active');
 };
-dropBtn.addEventListener('pointerdown', startFastDrop);
-dropBtn.addEventListener('pointerup', stopFastDrop);
-dropBtn.addEventListener('pointercancel', stopFastDrop);
-dropBtn.addEventListener('pointerleave', stopFastDrop);
+fastBtn.addEventListener('pointerdown', startFastDrop);
+fastBtn.addEventListener('pointerup', stopFastDrop);
+fastBtn.addEventListener('pointercancel', stopFastDrop);
+fastBtn.addEventListener('pointerleave', stopFastDrop);
 
 function setupStage(level) {
     board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
@@ -665,7 +775,7 @@ function updateUI() {
 function drawMiniPiece(targetCtx, targetCanvas, piece) {
     targetCtx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
     if (!piece) return;
-    let size = 5.5;
+    let size = 10;
     let shape = piece.shape;
     let w = shape[0].length * size;
     let h = shape.length * size;
@@ -837,16 +947,16 @@ function updateAnimation(dt) {
                         groupBoard[r][c] = 0;
                         score += 10 * chainCount;
                         clearedCount++;
-                        centerSumX += BOARD_X + c * BLOCK_SIZE + BLOCK_SIZE / 2;
-                        centerSumY += BOARD_Y + r * BLOCK_SIZE + BLOCK_SIZE / 2;
-                        spawnClearSparkles(BOARD_X + c * BLOCK_SIZE + BLOCK_SIZE / 2, BOARD_Y + r * BLOCK_SIZE + BLOCK_SIZE / 2);
+                        centerSumX += c * BLOCK_SIZE + BLOCK_SIZE / 2;
+                        centerSumY += r * BLOCK_SIZE + BLOCK_SIZE / 2;
+                        spawnClearSparkles(c * BLOCK_SIZE + BLOCK_SIZE / 2, r * BLOCK_SIZE + BLOCK_SIZE / 2);
                     }
                     if (pendingClearBugs[r][c]) {
                         board[r][c] = 0;
                         groupBoard[r][c] = 0;
                         killed++;
                         score += 500 * chainCount;
-                        spawnSquash(BOARD_X + c * BLOCK_SIZE + BLOCK_SIZE / 2, BOARD_Y + r * BLOCK_SIZE + BLOCK_SIZE / 2);
+                        spawnSquash(c * BLOCK_SIZE + BLOCK_SIZE / 2, r * BLOCK_SIZE + BLOCK_SIZE / 2);
                     }
                 }
             }
@@ -916,16 +1026,11 @@ function resplitDisconnectedGroups() {
     }
 }
 
-/**
- * 根本修正：ステップバイステップ（1マスずつ）物理重力シミュレーション
- * 未判定ブロックの飛び越えや不当な巻き込み落下を100%防止。
- */
 function setupGroupGravityAnimation() {
     fallingGroups = [];
     let compVisited = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
     let components = [];
 
-    // 1. 各同一 groupId の接続色ブロックを抽出
     for (let r = 0; r < ROWS; r++) {
         for (let c = 0; c < COLS; c++) {
             let type = board[r][c];
@@ -970,7 +1075,6 @@ function setupGroupGravityAnimation() {
         return;
     }
 
-    // 2. 仮想盤面上で1マスずつの全体ステップ物理テスト
     let simB = Array.from({ length: ROWS }, (_, r) => [...board[r]]);
     let simG = Array.from({ length: ROWS }, (_, r) => [...groupBoard[r]]);
 
@@ -984,7 +1088,6 @@ function setupGroupGravityAnimation() {
             let canFall = true;
             for (let cell of comp.cells) {
                 let nextR = cell.r + 1;
-                // 床または自分以外の障害物（敵や着地済みブロック）にぶつかったら移動不可
                 if (nextR >= ROWS) {
                     canFall = false;
                     break;
@@ -1011,7 +1114,6 @@ function setupGroupGravityAnimation() {
         }
     }
 
-    // 3. 移動するグループのみをアニメーション配列に登録
     let anyGroupMoving = false;
     for (let comp of components) {
         if (comp.totalFall > 0) {
@@ -1173,21 +1275,21 @@ function drawGame() {
     if (gameState !== 'PLAYING' && gameState !== 'CLEARING' && gameState !== 'PAUSED' && gameState !== 'LOGS' && gameState !== 'GAMEOVER' && gameState !== 'STAGECLEAR') return;
 
     ctx.fillStyle = '#1a0f3d';
-    ctx.fillRect(BOARD_X, BOARD_Y, COLS * BLOCK_SIZE, ROWS * BLOCK_SIZE);
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.strokeStyle = 'rgba(255,255,255,0.05)';
     ctx.lineWidth = 1;
     for (let c = 1; c < COLS; c++) {
         ctx.beginPath();
-        ctx.moveTo(BOARD_X + c * BLOCK_SIZE, BOARD_Y);
-        ctx.lineTo(BOARD_X + c * BLOCK_SIZE, BOARD_Y + ROWS * BLOCK_SIZE);
+        ctx.moveTo(c * BLOCK_SIZE, 0);
+        ctx.lineTo(c * BLOCK_SIZE, ROWS * BLOCK_SIZE);
         ctx.stroke();
     }
 
     for (let r = 0; r < ROWS; r++) {
         for (let c = 0; c < COLS; c++) {
             if (board[r][c]) {
-                let px = BOARD_X + c * BLOCK_SIZE;
-                let py = BOARD_Y + r * BLOCK_SIZE;
+                let px = c * BLOCK_SIZE;
+                let py = r * BLOCK_SIZE;
                 let gId = groupBoard[r][c];
 
                 let scale = 1.0;
@@ -1211,8 +1313,8 @@ function drawGame() {
 
     fallingGroups.forEach(g => {
         g.cells.forEach(cell => {
-            let px = BOARD_X + cell.c * BLOCK_SIZE;
-            let py = BOARD_Y + (cell.r + g.currentOffsetY) * BLOCK_SIZE;
+            let px = cell.c * BLOCK_SIZE;
+            let py = (cell.r + g.currentOffsetY) * BLOCK_SIZE;
 
             if (cell.type === 8) {
                 drawBug(px, py, 1.0);
@@ -1240,8 +1342,8 @@ function drawGame() {
         shape.forEach((row, r) => {
             row.forEach((val, c) => {
                 if (val) {
-                    let px = BOARD_X + (currentPiece.x + c) * BLOCK_SIZE;
-                    let py = BOARD_Y + (currentPiece.y + r) * BLOCK_SIZE;
+                    let px = (currentPiece.x + c) * BLOCK_SIZE;
+                    let py = (currentPiece.y + r) * BLOCK_SIZE;
                     let t = (r > 0 && shape[r - 1][c] > 0);
                     let b = (r < shape.length - 1 && shape[r + 1][c] > 0);
                     let l = (c > 0 && shape[r][c - 1] > 0);
@@ -1277,17 +1379,17 @@ function drawGame() {
 
     if (flashAlpha > 0) {
         ctx.fillStyle = `rgba(255,217,61,${flashAlpha * 0.22})`;
-        ctx.fillRect(BOARD_X, BOARD_Y, COLS * BLOCK_SIZE, ROWS * BLOCK_SIZE);
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
     if (gameState === 'PAUSED' || gameState === 'LOGS') {
         ctx.fillStyle = 'rgba(20,10,45,0.55)';
-        ctx.fillRect(BOARD_X, BOARD_Y, COLS * BLOCK_SIZE, ROWS * BLOCK_SIZE);
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
     ctx.strokeStyle = 'rgba(255,255,255,0.8)';
     ctx.lineWidth = 3;
-    ctx.strokeRect(BOARD_X, BOARD_Y, COLS * BLOCK_SIZE, ROWS * BLOCK_SIZE);
+    ctx.strokeRect(0, 0, canvas.width, canvas.height);
 }
 
 function drawConnectedCell(px, py, type, top, bottom, left, right, scale = 1.0) {
@@ -1389,8 +1491,8 @@ function drawBug(px, py, scale = 1.0) {
 }
 
 function drawGhostCell(c, r) {
-    let px = BOARD_X + c * BLOCK_SIZE;
-    let py = BOARD_Y + r * BLOCK_SIZE;
+    let px = c * BLOCK_SIZE;
+    let py = r * BLOCK_SIZE;
     ctx.strokeStyle = 'rgba(255,255,255,0.4)';
     ctx.setLineDash([3, 3]);
     ctx.lineWidth = 1.5;
@@ -1399,6 +1501,7 @@ function drawGhostCell(c, r) {
     ctx.setLineDash([]);
 }
 
+// キャンバス上でのスワイプ/タップ操作
 let tX = 0, tY = 0, tTime = 0;
 let initialPieceX = 0;
 let isDragging = false;
@@ -1458,21 +1561,7 @@ canvas.addEventListener('pointerup', e => {
     let dt = Date.now() - tTime;
 
     if (Math.abs(dx) < 15 && Math.abs(dy) < 15 && dt < 200) {
-        let oldShape = currentPiece.shape;
-        let rotated = oldShape[0].map((_, i) => oldShape.map(row => row[i]).reverse());
-        let oldX = currentPiece.x;
-
-        currentPiece.shape = rotated;
-        if (checkCollisionAt(currentPiece.x, currentPiece.y, currentPiece.shape)) {
-            currentPiece.x -= 1;
-            if (checkCollisionAt(currentPiece.x, currentPiece.y, currentPiece.shape)) {
-                currentPiece.x += 2;
-                if (checkCollisionAt(currentPiece.x, currentPiece.y, currentPiece.shape)) {
-                    currentPiece.x = oldX;
-                    currentPiece.shape = oldShape;
-                }
-            }
-        }
+        rotatePiece();
     }
 });
 
