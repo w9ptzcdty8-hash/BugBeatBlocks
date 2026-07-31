@@ -473,7 +473,7 @@
 
 <script>
 /**
- * Bug Beat Blocks - 致命的バグ修正＆全オブジェクト反転・停止対応版
+ * Bug Beat Blocks - レベル20全解放版
  */
 
 const canvas = document.getElementById('gameCanvas');
@@ -500,7 +500,12 @@ const COLORS = [
     'BUG_CORAL',  // 11
     'BUG_PINK',   // 12
     'BUG_METAL',  // 13
-    'BUG_BAT'     // 14
+    'BUG_BAT_WHITE',  // 14
+    'BUG_BAT_YELLOW', // 15
+    'BUG_BAT_SKY',    // 16
+    'BUG_BAT_CORAL',  // 17
+    'BUG_BAT_PINK',   // 18
+    'BUG_BAT_METAL'   // 19
 ];
 
 const BUG_FACE_COLORS = {
@@ -510,7 +515,12 @@ const BUG_FACE_COLORS = {
     11: '#ff6f61',
     12: '#ff9de2',
     13: '#6a6c75',
-    14: '#fbf5eb'
+    14: '#fbf5eb',
+    15: '#ffd93d',
+    16: '#4dd2ff',
+    17: '#ff6f61',
+    18: '#ff9de2',
+    19: '#6a6c75'
 };
 
 const SHAPES = [
@@ -561,9 +571,10 @@ let pendingClearBugs = [];
 let fallingGroups = []; 
 
 let batBugs = [];
-let chainCount = 0;
-let devLogs = [];
 
+let chainCount = 0;
+
+let devLogs = [];
 function addLog(msg) {
     const timeStr = new Date().toTimeString().split(' ')[0];
     devLogs.push(`[${timeStr}] ${msg}`);
@@ -648,22 +659,23 @@ function changeScreen(state) {
     }
 }
 
+/**
+ * レベル1〜20までを全てオープン
+ */
 function buildLevelGrid() {
     const grid = document.getElementById('level-grid');
     grid.innerHTML = '';
     for (let i = 1; i <= 20; i++) {
         const btn = document.createElement('div');
-        btn.className = `lvl-btn ${i > 10 ? 'locked' : ''}`;
-        const bugCount = Math.min(i, 10);
-        btn.innerHTML = i > 10 ? `🔒` : `${i}<span class="bug-count">●×${bugCount}</span>`;
-        if (i <= 10) {
-            btn.onclick = () => {
-                selectedLevel = i;
-                score = 0;
-                setupStage(selectedLevel);
-                changeScreen('PLAYING');
-            };
-        }
+        btn.className = `lvl-btn`;
+        const bugCount = Math.min(i, 7);
+        btn.innerHTML = `${i}<span class="bug-count">●×${bugCount}</span>`;
+        btn.onclick = () => {
+            selectedLevel = i;
+            score = 0;
+            setupStage(selectedLevel);
+            changeScreen('PLAYING');
+        };
         grid.appendChild(btn);
     }
 }
@@ -680,7 +692,7 @@ document.getElementById('overlay-action-btn').onclick = () => {
         setupStage(selectedLevel);
         changeScreen('PLAYING');
     } else if (gameState === 'STAGECLEAR') {
-        selectedLevel = Math.min(selectedLevel + 1, 10);
+        selectedLevel = Math.min(selectedLevel + 1, 20); // レベル20まで上限解放
         setupStage(selectedLevel);
         changeScreen('PLAYING');
     }
@@ -776,51 +788,51 @@ function setupStage(level) {
     groupBoard = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
     batBugs = [];
 
-    const bugCount = Math.min(level, 10);
+    const bugCount = Math.min(level, 7);
     remainingEnemies = bugCount;
 
     for (let i = 0; i < bugCount; i++) {
         let x = (i * 3 + 2) % COLS;
         let y = 19 - Math.floor(i / 2) * 2;
         
-        let bugType = 8;
+        let bugType = 8; 
+        let isBat = false;
+        let batSubtype = 14; 
+
         if (level >= 7 && Math.random() < 0.35) {
-            bugType = 14; 
-        } else if (level >= 5 && Math.random() < 0.35) {
-            bugType = 13; 
-        } else if (level >= 2 && Math.random() < 0.6) {
-            bugType = Math.floor(Math.random() * 4) + 9; 
-        }
-
-        if (bugType === 14) {
-            let minX = Math.max(0, x - 2);
-            let maxX = Math.min(COLS - 1, x + 2);
-
-            let occupiedRanges = batBugs
-                .filter(b => b.row === y)
-                .map(b => ({ min: b.minX, max: b.maxX }));
-
-            let overlap = occupiedRanges.some(r => !(maxX < r.min || minX > r.max));
-            if (overlap) {
-                if (x > 2 && !occupiedRanges.some(r => !(x - 1 < r.min || x - 1 > r.max))) {
-                    minX = Math.max(0, x - 1);
-                    maxX = Math.min(COLS - 1, x + 1);
-                } else {
-                    minX = x;
-                    maxX = x;
+            let batsOnRow = batBugs.filter(b => b.row === y).length;
+            if (batsOnRow === 0) {
+                isBat = true;
+                if (level >= 15 && Math.random() < 0.3) {
+                    batSubtype = 19; 
+                } else if (level >= 10 && Math.random() < 0.5) {
+                    batSubtype = Math.floor(Math.random() * 4) + 15; 
                 }
             }
+        }
 
+        if (isBat) {
+            bugType = batSubtype;
+        } else {
+            if (level >= 5 && Math.random() < 0.35) {
+                bugType = 13; 
+            } else if (level >= 2 && Math.random() < 0.6) {
+                bugType = Math.floor(Math.random() * 4) + 9; 
+            }
+        }
+
+        if (isBat) {
             batBugs.push({
                 id: `bat_${i}`,
                 row: y,
                 posX: x,
                 dir: Math.random() < 0.5 ? 1 : -1,
                 speed: 1.8,
-                minX: minX,
-                maxX: maxX
+                minX: Math.max(0, x - 2),
+                maxX: Math.min(COLS - 1, x + 2),
+                type: bugType
             });
-            board[y][x] = 14;
+            board[y][x] = bugType;
             groupBoard[y][x] = -1;
         } else {
             board[y][x] = bugType;
@@ -842,23 +854,17 @@ function setupStage(level) {
     addLog(`Setup Stage ${level}: ${bugCount} bugs (Bat Bugs: ${batBugs.length})`);
 }
 
-/**
- * 総合障害物チェック
- */
 function isObstacleAt(r, c, currentBatId) {
     if (c < 0 || c >= COLS || r < 0 || r >= ROWS) return true;
 
-    // 1. 設置済みブロック、他の静止バグ
     let cell = board[r][c];
-    if (cell !== 0 && cell !== 14) return true;
+    if (cell !== 0 && (cell < 14 || cell > 19)) return true;
 
-    // 2. 他のバットバグ
     for (let b of batBugs) {
         if (b.id === currentBatId) continue;
         if (b.row === r && Math.round(b.posX) === c) return true;
     }
 
-    // 3. プレイヤー操作中のブロック
     if (currentPiece && gameState === 'PLAYING' && !isAnimating) {
         let shape = currentPiece.shape;
         for (let pr = 0; pr < shape.length; pr++) {
@@ -870,7 +876,6 @@ function isObstacleAt(r, c, currentBatId) {
         }
     }
 
-    // 4. 重力落下アニメーション中のブロック
     for (let g of fallingGroups) {
         for (let cell of g.cells) {
             let fallR = Math.round(cell.r + g.currentOffsetY);
@@ -881,9 +886,6 @@ function isObstacleAt(r, c, currentBatId) {
     return false;
 }
 
-/**
- * バットバグのリアルタイム移動（完全停止・めり込み防止版）
- */
 function updateBatBugs(dt) {
     if (gameState !== 'PLAYING' || isAnimating) return;
 
@@ -893,18 +895,16 @@ function updateBatBugs(dt) {
     batBugs.forEach(b => {
         let currentGridX = Math.round(b.posX);
 
-        // 真上にブロックまたは障害物が乗っているか判定
         let hasBlockAbove = isObstacleAt(b.row - 1, currentGridX, b.id);
         if (hasBlockAbove && b.row > 0) {
             b.posX = currentGridX;
             if (board[b.row][currentGridX] === 0) {
-                board[b.row][currentGridX] = 14;
+                board[b.row][currentGridX] = b.type;
                 groupBoard[b.row][currentGridX] = -1;
             }
-            return; // ブロックが上にある間は完全に停止する
+            return;
         }
 
-        // 動的な可動領域の制限計算
         let effMinX = b.minX;
         let effMaxX = b.maxX;
 
@@ -921,20 +921,17 @@ function updateBatBugs(dt) {
             }
         }
 
-        // 完全に塞がれた（動けるスペースが1マス分もない）場合
         if (effMinX >= effMaxX) {
             b.posX = currentGridX;
             if (board[b.row][currentGridX] === 0) {
-                board[b.row][currentGridX] = 14;
+                board[b.row][currentGridX] = b.type;
                 groupBoard[b.row][currentGridX] = -1;
             }
             return;
         }
 
-        // 移動
         let nextX = b.posX + b.dir * b.speed * sec;
 
-        // 障害物手前で反転
         if (b.dir < 0 && nextX <= effMinX) {
             nextX = effMinX;
             b.dir = 1;
@@ -946,18 +943,18 @@ function updateBatBugs(dt) {
         b.posX = nextX;
         let newGridX = Math.round(b.posX);
 
-        // グリッド占有状態の更新
         if (newGridX !== currentGridX) {
-            if (board[b.row][currentGridX] === 14) {
+            let myType = board[b.row][currentGridX];
+            if (myType >= 14 && myType <= 19) {
                 board[b.row][currentGridX] = 0;
                 groupBoard[b.row][currentGridX] = 0;
             }
             if (!isObstacleAt(b.row, newGridX, b.id)) {
-                board[b.row][newGridX] = 14;
+                board[b.row][newGridX] = b.type;
                 groupBoard[b.row][newGridX] = -1;
             } else {
                 b.posX = currentGridX;
-                board[b.row][currentGridX] = 14;
+                board[b.row][currentGridX] = b.type;
                 groupBoard[b.row][currentGridX] = -1;
             }
             movedCellOut = true;
@@ -1144,10 +1141,16 @@ function processMatches() {
                     if (n.r >= 0 && n.r < ROWS && n.c >= 0 && n.c < COLS) {
                         let bugType = board[n.r][n.c];
                         
-                        if (bugType === 8 || bugType === 13 || bugType === 14) {
+                        if (bugType === 8 || bugType === 13 || bugType === 14 || bugType === 19) {
                             toClearBugs[n.r][n.c] = true;
-                        } else if (bugType >= 9 && bugType <= 12) {
+                        } 
+                        else if (bugType >= 9 && bugType <= 12) {
                             if (bugType - 8 === blockColor) {
+                                toClearBugs[n.r][n.c] = true;
+                            }
+                        }
+                        else if (bugType >= 15 && bugType <= 18) {
+                            if (bugType - 14 === blockColor) {
                                 toClearBugs[n.r][n.c] = true;
                             }
                         }
@@ -1194,14 +1197,19 @@ function updateAnimation(dt) {
                     if (pendingClearBugs[r][c]) {
                         let bugType = board[r][c];
 
-                        if (bugType === 13) {
+                        if (bugType === 13 || bugType === 19) {
                             let nextType = (Math.random() < 0.4) ? 8 : Math.floor(Math.random() * 4) + 9;
                             board[r][c] = nextType;
                             score += 250 * chainCount;
+                            
+                            if (bugType === 19) {
+                                batBugs = batBugs.filter(b => !(b.row === r && Math.round(b.posX) === c));
+                            }
+                            
                             spawnSquash(c * BLOCK_SIZE + BLOCK_SIZE / 2, r * BLOCK_SIZE + BLOCK_SIZE / 2);
                             spawnPopText(c * BLOCK_SIZE + BLOCK_SIZE / 2, r * BLOCK_SIZE + BLOCK_SIZE / 2, 'TRANSFORM!', '#ffd93d');
                         } else {
-                            if (bugType === 14) {
+                            if (bugType >= 14 && bugType <= 18) {
                                 batBugs = batBugs.filter(b => !(b.row === r && Math.round(b.posX) === c));
                             }
                             board[r][c] = 0;
@@ -1550,7 +1558,7 @@ function drawGame() {
                     scale = Math.max(0, 1.0 - progress * 0.8);
                 }
 
-                if (board[r][c] >= 8 && board[r][c] !== 14) {
+                if (board[r][c] >= 8 && board[r][c] <= 13) {
                     drawBug(px, py, scale, board[r][c]);
                 } else if (board[r][c] < 8) {
                     let t = (r > 0 && groupBoard[r - 1][c] === gId);
@@ -1571,7 +1579,7 @@ function drawGame() {
             let progress = animTimer / (normalDropInterval / 2);
             scale = Math.max(0, 1.0 - progress * 0.8);
         }
-        drawBatBug(px, py, scale, b.dir);
+        drawBatBug(px, py, scale, b.dir, b.type);
     });
 
     fallingGroups.forEach(g => {
@@ -1579,8 +1587,10 @@ function drawGame() {
             let px = cell.c * BLOCK_SIZE;
             let py = (cell.r + g.currentOffsetY) * BLOCK_SIZE;
 
-            if (cell.type >= 8) {
+            if (cell.type >= 8 && cell.type <= 13) {
                 drawBug(px, py, 1.0, cell.type);
+            } else if (cell.type >= 14) {
+                drawBatBug(px, py, 1.0, 1, cell.type);
             } else {
                 let r = cell.r, c = cell.c, gId = cell.groupId;
                 let t = g.cells.some(other => other.r === r - 1 && other.c === c && other.groupId === gId);
@@ -1753,7 +1763,7 @@ function drawBug(px, py, scale = 1.0, bugType = 8) {
     ctx.restore();
 }
 
-function drawBatBug(px, py, scale = 1.0, dir = 1) {
+function drawBatBug(px, py, scale = 1.0, dir = 1, bugType = 14) {
     let s = BLOCK_SIZE;
     ctx.save();
 
@@ -1761,31 +1771,35 @@ function drawBatBug(px, py, scale = 1.0, dir = 1) {
     let baseScale = (s / 36) * scale; 
     ctx.scale(baseScale, baseScale);
 
-    ctx.fillStyle = '#4a4d52';
+    // 視認性の高い、大きく明るいコウモリの羽
+    ctx.fillStyle = '#6b5b95'; 
     ctx.strokeStyle = '#2a1550';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 3.5;
+    ctx.lineJoin = 'round';
 
     ctx.beginPath();
-    ctx.moveTo(-10, -2);
-    ctx.lineTo(-24, -14);
-    ctx.lineTo(-18, -4);
-    ctx.lineTo(-26, 4);
-    ctx.lineTo(-14, 6);
+    ctx.moveTo(-8, -2);
+    ctx.lineTo(-28, -18);
+    ctx.lineTo(-20, -5);
+    ctx.lineTo(-30, 6);
+    ctx.lineTo(-14, 8);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
 
     ctx.beginPath();
-    ctx.moveTo(10, -2);
-    ctx.lineTo(24, -14);
-    ctx.lineTo(18, -4);
-    ctx.lineTo(26, 4);
-    ctx.lineTo(14, 6);
+    ctx.moveTo(8, -2);
+    ctx.lineTo(28, -18);
+    ctx.lineTo(20, -5);
+    ctx.lineTo(30, 6);
+    ctx.lineTo(14, 8);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
 
-    ctx.fillStyle = '#fbf5eb';
+    let faceColor = BUG_FACE_COLORS[bugType] || '#fbf5eb';
+
+    ctx.fillStyle = faceColor;
     ctx.strokeStyle = '#3d312a';
     ctx.lineWidth = 2.5;
 
@@ -1803,7 +1817,7 @@ function drawBatBug(px, py, scale = 1.0, dir = 1) {
     ctx.fill();
     ctx.stroke();
 
-    ctx.fillStyle = '#3d312a';
+    ctx.fillStyle = (bugType === 19) ? '#ff3b30' : '#3d312a';
     ctx.beginPath();
     ctx.ellipse(-6, 2, 2.5, 5, 0, 0, Math.PI * 2);
     ctx.fill();
@@ -1811,7 +1825,7 @@ function drawBatBug(px, py, scale = 1.0, dir = 1) {
     ctx.ellipse(6, 2, 2.5, 5, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = (bugType === 19) ? '#ff9500' : '#ffffff';
     ctx.fillRect(-7, -0.5, 2, 2);
     ctx.fillRect(5, -0.5, 2, 2);
 
@@ -1903,5 +1917,3 @@ requestAnimationFrame(update);
 </script>
 </body>
 </html>
-
-
