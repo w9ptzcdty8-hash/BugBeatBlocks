@@ -26,7 +26,7 @@
             padding: 0;
             user-select: none;
             -webkit-user-select: none;
-            touch-action: manipulation;
+            touch-action: none;
         }
         body, html {
             width: 100%;
@@ -1912,6 +1912,22 @@ canvas.addEventListener('pointercancel', () => {
 });
 
 window.addEventListener('resize', resizeCanvas);
+
+// iOS Safari等のダブルタップによるズーム防止処理
+let lastTouchEnd = 0;
+document.addEventListener('touchend', function (e) {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 300) {
+        e.preventDefault();
+    }
+    lastTouchEnd = now;
+}, { passive: false });
+
+// ピンチイン・ピンチアウトのジェスチャーによるズーム防止
+document.addEventListener('gesturestart', function (e) {
+    e.preventDefault();
+});
+
 changeScreen('TITLE');
 requestAnimationFrame(update);
 </script>
